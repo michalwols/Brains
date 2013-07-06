@@ -1,43 +1,35 @@
-function [ clustered, means ] = K_means( src, k, means, distance )
+function [ clustered, means ] = K_means( src, k, means )
 % K-means clustering algorithm
-% src - data to be clustered
-% k - number of clusters
-% means - initial seed means
-% distance - (optional) distance measure to be used instead of euclidean 
-%            distance
-
-    if isempty(distance)
-        distance = @(x, y) norm(x-y);
-    end
+%   src - data to be clustered
+%   k - number of clusters
+%   means - (optional) initial seed means
         
     if isempty(means)
         vals = unique(src(:));
-        if numel(vals) < k
-            throw(MException('K_means:ClusterNum', ...
-                'The number of clusters is larger than the number of distinct values'));
-        else
-            step = floor(numel(vals) / k);
-            means = vals(1:step:end);
-        end    
+        step = floor(numel(vals) / k);
+        means = vals(1:step:end);   
     end
     
-    while true
+    distances = zeros(size(means));
+    clustered = zeros(size(src));
+    old_means = zeros(size(means));
+    
+    while any(old_means ~= means)
         
         %assign clusters
-        clustered = arrayfun(@(elem) assign_cluster(elem, means, distance), src);
-
+        for n = 1:numel(src)
+            for i = 1:numel(means)
+                distances(i) = abs( src(n) - means(i) );
+            end
+            [~, clustered(n)] = min(distances);
+        end
+        
         old_means = means;
         
         %update means
         for i = 1:k
             means(i) = mean( src( clustered == i ));
         end
-        
-        if old_means == means
-            break;
-        end
-        
     end
-
 end
 
